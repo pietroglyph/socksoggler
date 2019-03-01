@@ -1,0 +1,27 @@
+{
+  "description": "Extension to toggle a SOCKS over SSH tunnel script, and switch browser proxy settings accordingly",
+  "manifest_version": 2,
+  "name": "socksoggler",
+  "version": "0.1",
+  "icons": {
+    "48": "icons/logo.svg"
+  },
+
+  "applications": {
+    "gecko": {
+      "id": "ssh-proxy-toggler@0x778.tk",
+      "strict_min_version": "60.0"
+    }
+  },
+
+  "background": {
+    "scripts": ["background.js"]
+  },
+
+  "browser_action": {
+    "default_icon": "icons/logo.svg"
+  },
+  
+  "permissions": ["nativeMessaging", "proxy"]
+
+}
