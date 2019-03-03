@@ -1,7 +1,6 @@
-var isProxyOn = false;
 updateBadge();
 
-// Connect to the native switcher on startup
+// Connect to the native client
 var port = browser.runtime.connectNative("socksoggler");
 
 // Listen for messages
@@ -9,13 +8,42 @@ port.onMessage.addListener((response) => {
   console.log("Recieved native message: " + response);
 });
 
+browser.proxy.settings.get({}).then((r) => console.log(r.value));
+
 browser.browserAction.onClicked.addListener(() => {
+  toggleProxy();
   browser.proxy.settings.get({}).then((r) => console.log(r.value));
-  updateBadge();
-  console.log("Sending off");
-  port.postMessage("off");
 });
 
+function toggleProxy() {
+  isProxyOn().then((isOn) => {
+    if (isOn) {
+      browser.proxy.settings.set({ value: { proxyType: "none" } }).then(updateBadge);
+      port.postMessage("off");
+    } else
+      browser.storage.sync.get().then((r) => {
+        browser.proxy.settings.set({
+          value: {
+            proxyType: r.proxyType || "manual",
+            socks: r.socksAddress || "",
+            proxyDNS: true,
+          }
+        }).then(updateBadge);
+        port.postMessage("on " + r.command);
+      });
+  });
+}
+
 function updateBadge() {
-  browser.browserAction.setBadgeText({text: isProxyOn ? "On" : "Off"});
+  isProxyOn().then((isOn) => {
+    browser.browserAction.setBadgeText({ text: isOn ? "On" : "Off" });
+    browser.browserAction.setBadgeTextColor({ color: "white" });
+    browser.browserAction.setBadgeBackgroundColor({ color: isOn ? "blue" : "red" });
+  });
+}
+
+async function isProxyOn() {
+  let proxySettings = await browser.proxy.settings.get({});
+  console.log(proxySettings.value.proxyType);
+  return proxySettings.value.proxyType !== "none";
 }

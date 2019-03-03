@@ -9,7 +9,7 @@
 
   "applications": {
     "gecko": {
-      "id": "ssh-proxy-toggler@0x778.tk",
+      "id": "socksoggler@0x778.tk",
       "strict_min_version": "60.0"
     }
   },
@@ -18,10 +18,14 @@
     "scripts": ["background.js"]
   },
 
+  "options_ui": {
+    "page": "options.html"
+  },
+
   "browser_action": {
     "default_icon": "icons/logo.svg"
   },
   
-  "permissions": ["nativeMessaging", "proxy"]
+  "permissions": ["nativeMessaging", "proxy", "storage"]
 
 }
