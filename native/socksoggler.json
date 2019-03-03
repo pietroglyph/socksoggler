@@ -1,7 +1,7 @@
 {
   "name": "socksoggler",
   "description": "Native client that keeps an arbitrary command running while the proxy is on, and stops it while it's off",
-  "path": "/fix/this/path/socksoggler",
+  "path": "/home/declan/work/bin/socksoggler",
   "type": "stdio",
   "allowed_extensions": [ "socksoggler@0x778.tk" ]
 }
