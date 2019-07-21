@@ -1,3 +1,5 @@
+const DELIMITER = "¬";
+
 updateBadge();
 
 // Connect to the native client
@@ -5,7 +7,7 @@ var port = browser.runtime.connectNative("socksoggler");
 
 // Listen for messages
 port.onMessage.addListener((response) => {
-  console.log("Recieved native message: " + response);
+  console.log("Got native message: " + response);
 });
 
 browser.proxy.settings.get({}).then((r) => console.log(r.value));
@@ -19,7 +21,7 @@ function toggleProxy() {
   isProxyOn().then((isOn) => {
     if (isOn) {
       browser.proxy.settings.set({ value: { proxyType: "none" } }).then(updateBadge);
-      port.postMessage("off");
+      port.postMessage("off" + DELIMITER);
     } else
       browser.storage.sync.get().then((r) => {
         browser.proxy.settings.set({
@@ -29,7 +31,7 @@ function toggleProxy() {
             proxyDNS: true,
           }
         }).then(updateBadge);
-        port.postMessage("on " + r.command);
+        port.postMessage("on " + r.command + DELIMITER);
       });
   });
 }
