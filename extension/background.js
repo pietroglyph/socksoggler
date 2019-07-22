@@ -1,4 +1,4 @@
-var port = browser.runtime.connectNative("socksoggle");
+var port = browser.runtime.connectNative("socksoggler");
 
 isProxyOn().then((isOn) => setProxy(isOn, true));
 
