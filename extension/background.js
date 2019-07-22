@@ -6,7 +6,7 @@ browser.browserAction.onClicked.addListener(() => toggleProxy());
 
 browser.menus.create({
   id: "kill-process",
-  title: "Turn Off and Kill Process",
+  title: "Kill Process",
   contexts: ["browser_action"],
   onclick: () => setProxy(false, true),
 });
@@ -31,7 +31,6 @@ function setProxy(isOn, killProcess) {
   } else {
     browser.proxy.settings.set({ value: { proxyType: "none" } }).then(updateBadge);
     if (killProcess) {
-      console.log("Killing process...");
       port.postMessage({"action": "off"});
     }
   }
