@@ -5,3 +5,4 @@ authors = ["Declan Freeman-Gleason <declanfreemangleason@gmail.com>"]
 edition = "2018"
 
 [dependencies]
+shell-words = "0.1.0"

@@ -1,6 +1,8 @@
-use std::fs;
+extern crate shell_words;
+
+use std::convert::TryFrom;
 use std::io;
-use std::io::BufRead;
+use std::io::Read;
 use std::process::{Child, Command};
 use std::sync::mpsc;
 use std::thread;
@@ -11,35 +13,41 @@ enum ProcessCommand {
     Off,
 }
 
-// We use "¬" as a delimiter because we can't get a newline into the message
-const LINE_DELIMITER: u8 = b'\xAC';
-
-fn main() {
+fn main() -> ! {
     let stdin = io::stdin();
     let mut stdin = stdin.lock();
     let mut stdin_buf: Vec<u8> = vec![];
+    let mut stdin_len_buf: [u8; 4] = [0; 4];
     let (tx, rx) = mpsc::channel();
 
     thread::spawn(move || process_manager_thread(rx));
 
     loop {
+        // Every message starts with a 32-bit unsigned integer in native byte order representing message length
         stdin
-            .read_until(LINE_DELIMITER, &mut stdin_buf)
-            .expect("Couldn't read from stdin");
-        let mut command = String::from_utf8(stdin_buf).expect("stdin was not valid utf-8 encoded text");
-        stdin_buf = vec![];
-        command.pop(); // Don't include the delimiter
+            .read_exact(&mut stdin_len_buf[..])
+            .expect("Couldn't read length field from stdin");
+        let len_to_read = usize::try_from(u32::from_ne_bytes(stdin_len_buf))
+            .expect("u32 won't fit into a usize!");
 
-        // Native messaging annoyingly only sends strigified JSON
-        // Because we add a newline in the extension js messages
-        // look like "message\x1E", which means that quotes will
-        // always end up in front.
-        command = String::from(command.trim());
-        command = String::from(command.trim_start_matches('"'));
-        let split = command.split_whitespace();
+        // We must make sure the vec is large enough for the message
+        if stdin_buf.len() < len_to_read {
+            stdin_buf.resize_with(len_to_read, Default::default);
+        }
+
+        stdin
+            .read_exact(&mut stdin_buf[..len_to_read])
+            .expect("Couldn't read message contents from stdin into buffer");
+        let command =
+            String::from_utf8(stdin_buf.clone()).expect("stdin was not valid UTF-8 encoded text");
+        stdin_buf.clear();
+
+        // We split into shell arguments and remove the surrounding quotation marks
+        let split = shell_words::split(&command[1..command.len() - 1])
+            .expect("Couldn't split command into separate arguments");
 
         let mut cmd_to_run: Option<Command> = None;
-        for (i, val) in split.enumerate() {
+        for (i, val) in split.iter().enumerate() {
             if i == 0 && val == "off" {
                 tx.send(ProcessCommand::Off)
                     .expect("process manager channel should never be closed");
@@ -57,8 +65,6 @@ fn main() {
             tx.send(ProcessCommand::On(c))
                 .expect("process manager channel should never be closed");
         }
-
-        fs::write("/home/declan/wazzup", command.clone()).expect("boo");
     }
 }
 
@@ -85,7 +91,7 @@ fn process_manager_thread(rx: mpsc::Receiver<ProcessCommand>) -> ! {
                     continue;
                 }
                 child_process
-                    .expect("Child should never be None because of check in is_child_alive")
+                    .expect("Child should never be None because of the check in is_child_alive")
                     .kill()
                     .expect("Couldln't kill child process");
                 child_process = None;

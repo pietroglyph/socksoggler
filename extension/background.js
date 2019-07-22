@@ -1,5 +1,3 @@
-const DELIMITER = "¬";
-
 updateBadge();
 
 // Connect to the native client
@@ -21,7 +19,7 @@ function toggleProxy() {
   isProxyOn().then((isOn) => {
     if (isOn) {
       browser.proxy.settings.set({ value: { proxyType: "none" } }).then(updateBadge);
-      port.postMessage("off" + DELIMITER);
+      port.postMessage("off");
     } else
       browser.storage.sync.get().then((r) => {
         browser.proxy.settings.set({
@@ -31,7 +29,7 @@ function toggleProxy() {
             proxyDNS: true,
           }
         }).then(updateBadge);
-        port.postMessage("on " + r.command + DELIMITER);
+        port.postMessage("on " + r.command);
       });
   });
 }
