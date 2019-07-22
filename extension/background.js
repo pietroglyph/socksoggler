@@ -1,5 +1,4 @@
-// Connect to the native client
-var port = browser.runtime.connectNative("socksoggler");
+var port = browser.runtime.connectNative("socksoggle");
 
 isProxyOn().then((isOn) => setProxy(isOn, true));
 
@@ -27,13 +26,13 @@ function setProxy(isOn, killProcess) {
           proxyDNS: true,
         }
       }).then(updateBadge);
-      port.postMessage("on " + r.command);
+      port.postMessage({"action": "on", "cmd": r.command});
     });
   } else {
     browser.proxy.settings.set({ value: { proxyType: "none" } }).then(updateBadge);
     if (killProcess) {
       console.log("Killing process...");
-      port.postMessage("off");
+      port.postMessage({"action": "off"});
     }
   }
 }

@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 shell-words = "0.1.0"
+serde_json = "1.0"

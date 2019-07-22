@@ -1,5 +1,7 @@
+extern crate serde_json;
 extern crate shell_words;
 
+use serde_json::Value;
 use std::convert::TryFrom;
 use std::io;
 use std::io::Read;
@@ -38,33 +40,36 @@ fn main() -> ! {
         stdin
             .read_exact(&mut stdin_buf[..len_to_read])
             .expect("Couldn't read message contents from stdin into buffer");
-        let command =
+        let command_string =
             String::from_utf8(stdin_buf.clone()).expect("stdin was not valid UTF-8 encoded text");
         stdin_buf.clear();
 
-        // We split into shell arguments and remove the surrounding quotation marks
-        let split = shell_words::split(&command[1..command.len() - 1])
-            .expect("Couldn't split command into separate arguments");
+        let command: Value = serde_json::from_str(&command_string)
+            .expect("Couldn't deserialize command; is it valid JSON?");
 
-        let mut cmd_to_run: Option<Command> = None;
-        for (i, val) in split.iter().enumerate() {
-            if i == 0 && val == "off" {
-                tx.send(ProcessCommand::Off)
-                    .expect("process manager channel should never be closed");
-                continue;
-            } else if i == 1 {
-                cmd_to_run = Some(Command::new(val));
-            } else if i > 1 {
-                if let Some(ref mut c) = cmd_to_run {
-                    (*c).arg(val);
+        let to_send = match command["action"].as_str().expect("action is not a string") {
+            "off" => ProcessCommand::Off,
+            "on" => {
+                let args_strs =
+                    shell_words::split(command["cmd"].as_str().expect("cmd is not a string"))
+                        .expect("Couldn't split command into separate arguments");
+                if args_strs.len() < 1 {
+                    eprintln!("cmd must be nonempty");
+                    continue;
                 }
-            }
-        }
 
-        if let Some(c) = cmd_to_run {
-            tx.send(ProcessCommand::On(c))
-                .expect("process manager channel should never be closed");
-        }
+                let mut cmd = Command::new(&args_strs[0]);
+                cmd.args(&args_strs[1..]);
+
+                ProcessCommand::On(cmd)
+            }
+            _ => {
+                eprintln!("on and off are the only valid actions");
+                continue;
+            }
+        };
+        tx.send(to_send)
+            .expect("process manager channel should never be closed");
     }
 }
 
