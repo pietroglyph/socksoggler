@@ -10,7 +10,7 @@
   "applications": {
     "gecko": {
       "id": "socksoggler@0x778.tk",
-      "strict_min_version": "60.0"
+      "strict_min_version": "63.0"
     }
   },
 
